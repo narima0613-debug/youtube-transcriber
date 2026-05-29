@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube文字起こしツール</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.container{background:white;border-radius:16px;padding:40px;width:90%;max-width:700px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+h1{font-size:24px;margin-bottom:8px;color:#111}
+p.sub{color:#666;margin-bottom:24px;font-size:14px}
+input{width:100%;padding:14px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;outline:none}
+input:focus{border-color:#ff4444}
+button{width:100%;margin-top:12px;padding:14px;background:#ff4444;color:white;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer}
+button:disabled{background:#ccc}
+#result{margin-top:24px;display:none}
+#result h2{font-size:16px;color:#333;margin-bottom:10px}
+textarea{width:100%;height:300px;padding:14px;border:2px solid #e0e0e0;border-radius:10px;font-size:13px;line-height:1.8;resize:vertical;outline:none;font-family:monospace}
+.actions{display:flex;gap:10px;margin-top:10px}
+.btn-sub{flex:1;padding:10px;border:2px solid #ff4444;background:white;color:#ff4444;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
+#status{margin-top:12px;font-size:14px;color:#666;text-align:center}
+.error{color:#cc0000!important}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎬 YouTube 文字起こしツール</h1>
+  <p class="sub">URLを貼り付けるだけで文字起こしできます</p>
+  <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=...">
+  <button id="btn" onclick="transcribe()">文字起こしする</button>
+  <div id="status"></div>
+  <div id="result">
+    <h2>📝 文字起こし結果</h2>
+    <textarea id="output" readonly></textarea>
+    <div class="actions">
+      <button class="btn-sub" onclick="copyText()">📋 コピー</button>
+      <button class="btn-sub" onclick="downloadText()">💾 保存</button>
+    </div>
+  </div>
+</div>
+<script>
+async function transcribe(){
+  const url=document.getElementById('urlInput').value.trim();
+  if(!url)return;
+  const btn=document.getElementById('btn');
+  const status=document.getElementById('status');
+  btn.disabled=true;btn.textContent='取得中...';
+  status.textContent='字幕を取得中...';status.className='';
+  document.getElementById('result').style.display='none';
+  try{
+    const res=await fetch('/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const data=await res.json();
+    if(data.error)throw new Error(data.error);
+    document.getElementById('output').value=data.text;
+    document.getElementById('result').style.display='block';
+    status.textContent='完了！'+data.count+'件取得';
+  }catch(e){
+    status.textContent='エラー: '+e.message;status.className='error';
+  }finally{
+    btn.disabled=false;btn.textContent='文字起こしする';
+  }
+}
+function copyText(){navigator.clipboard.writeText(document.getElementById('output').value);alert('コピーしました！');}
+function downloadText(){const blob=new Blob([document.getElementById('output').value],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='transcript.txt';a.click();}
+document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')transcribe();});
+</script>
+</body>
+</html>
