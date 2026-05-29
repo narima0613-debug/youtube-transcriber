@@ -1,4 +1,4 @@
-import re
+return open('index.html').read()import re
 from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 
